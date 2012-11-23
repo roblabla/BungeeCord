@@ -20,7 +20,7 @@ public class Logger extends java.util.logging.Logger
 
     public Logger()
     {
-        super("RubberBand", null);
+        super("BungeeCord", null);
         try
         {
             FileHandler handler = new FileHandler("proxy.log", BungeeCord.instance.config.logNumLines, 1, true);

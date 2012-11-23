@@ -1,5 +1,6 @@
 package net.md_5.bungee;
 
+import .*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;

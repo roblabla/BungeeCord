@@ -5,7 +5,7 @@ import net.md_5.bungee.ChatColor;
 import net.md_5.bungee.Permission;
 
 /**
- * Command to set a temp copy of the motd in real-time without stopping the
+ * Command to set a temp copy of the MOTD in real-time without stopping the
  * proxy.
  */
 public class CommandMotd extends Command

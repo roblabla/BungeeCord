@@ -1,11 +1,12 @@
 package net.md_5.bungee.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class Packet1Login extends DefinedPacket
+public class Packet1Login extends Packet
 {
 
     public int entityId;
@@ -20,7 +21,7 @@ public class Packet1Login extends DefinedPacket
     {
         super(0x01);
         writeInt(entityId);
-        writeUTF(levelType);
+        writeString(levelType);
         writeByte(gameMode);
         writeByte(dimension);
         writeByte(difficulty);
@@ -28,11 +29,11 @@ public class Packet1Login extends DefinedPacket
         writeByte(maxPlayers);
     }
 
-    public Packet1Login(byte[] buf)
+    public Packet1Login(ByteBuf buf)
     {
         super(0x01, buf);
         this.entityId = readInt();
-        this.levelType = readUTF();
+        this.levelType = readString();
         this.gameMode = readByte();
         this.dimension = readByte();
         this.difficulty = readByte();

@@ -1,11 +1,12 @@
 package net.md_5.bungee.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class PacketFFKick extends DefinedPacket
+public class PacketFFKick extends Packet
 {
 
     public String message;
@@ -13,12 +14,12 @@ public class PacketFFKick extends DefinedPacket
     public PacketFFKick(String message)
     {
         super(0xFF);
-        writeUTF(message);
+        writeString(message);
     }
 
-    public PacketFFKick(byte[] buf)
+    public PacketFFKick(ByteBuf buf)
     {
         super(0xFF, buf);
-        this.message = readUTF();
+        this.message = readString();
     }
 }

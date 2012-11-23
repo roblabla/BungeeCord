@@ -1,21 +1,22 @@
 package net.md_5.bungee.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class PacketC9PlayerListItem extends DefinedPacket
+public class PacketC9PlayerListItem extends Packet
 {
 
     public String username;
     public boolean online;
     public int ping;
 
-    public PacketC9PlayerListItem(byte[] packet)
+    public PacketC9PlayerListItem(ByteBuf packet)
     {
         super(0xC9, packet);
-        username = readUTF();
+        username = readString();
         online = readBoolean();
         ping = readShort();
     }
@@ -23,7 +24,7 @@ public class PacketC9PlayerListItem extends DefinedPacket
     public PacketC9PlayerListItem(String username, boolean online, int ping)
     {
         super(0xC9);
-        writeUTF(username);
+        writeString(username);
         writeBoolean(online);
         writeShort(ping);
     }

@@ -1,5 +1,6 @@
 package net.md_5.bungee;
 
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import net.md_5.bungee.command.CommandSender;
-import net.md_5.bungee.packet.DefinedPacket;
+import net.md_5.bungee.packet.Packet;
 import net.md_5.bungee.packet.Packet0KeepAlive;
 import net.md_5.bungee.packet.Packet1Login;
 import net.md_5.bungee.packet.Packet2Handshake;
@@ -25,8 +26,8 @@ public class UserConnection extends GenericConnection implements CommandSender
 {
 
     public final Packet2Handshake handshake;
-    public Queue<DefinedPacket> packetQueue = new ConcurrentLinkedQueue<>();
-    public List<byte[]> loginPackets = new ArrayList<>();
+    public Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
+    public List<ByteBuf> loginPackets = new ArrayList<>();
     private ServerConnection server;
     private UpstreamBridge upBridge;
     private DownstreamBridge downBridge;
@@ -263,7 +264,7 @@ public class UserConnection extends GenericConnection implements CommandSender
 
                     while (!packetQueue.isEmpty())
                     {
-                        DefinedPacket p = packetQueue.poll();
+                        Packet p = packetQueue.poll();
                         if (p != null)
                         {
                             out.write(p.getPacket());

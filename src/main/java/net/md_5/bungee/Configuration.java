@@ -72,7 +72,7 @@ public class Configuration
     /**
      * Socket timeout.
      */
-    public int timeout = 15000;
+    public int timeout = 15;
     /**
      * All servers.
      */

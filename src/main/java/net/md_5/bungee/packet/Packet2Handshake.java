@@ -1,11 +1,12 @@
 package net.md_5.bungee.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class Packet2Handshake extends DefinedPacket
+public class Packet2Handshake extends Packet
 {
 
     public byte procolVersion;
@@ -17,17 +18,17 @@ public class Packet2Handshake extends DefinedPacket
     {
         super(0x02);
         writeByte(protocolVersion);
-        writeUTF(username);
-        writeUTF(host);
+        writeString(username);
+        writeString(host);
         writeInt(port);
     }
 
-    public Packet2Handshake(byte[] buf)
+    public Packet2Handshake(ByteBuf buf)
     {
         super(0x02, buf);
         this.procolVersion = readByte();
-        this.username = readUTF();
-        this.host = readUTF();
+        this.username = readString();
+        this.host = readString();
         this.port = readInt();
     }
 }

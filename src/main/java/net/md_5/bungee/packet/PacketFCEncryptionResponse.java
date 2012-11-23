@@ -1,11 +1,12 @@
 package net.md_5.bungee.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class PacketFCEncryptionResponse extends DefinedPacket
+public class PacketFCEncryptionResponse extends Packet
 {
 
     public byte[] sharedSecret;
@@ -25,7 +26,7 @@ public class PacketFCEncryptionResponse extends DefinedPacket
         writeArray(verifyToken);
     }
 
-    public PacketFCEncryptionResponse(byte[] buf)
+    public PacketFCEncryptionResponse(ByteBuf buf)
     {
         super(0xFC, buf);
         this.sharedSecret = readArray();

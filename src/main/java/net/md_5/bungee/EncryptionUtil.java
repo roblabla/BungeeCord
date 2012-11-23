@@ -42,7 +42,6 @@ public class EncryptionUtil
 
     private static final Random random = new Random();
     private static KeyPair keys;
-    private static SecretKey secret = new SecretKeySpec(new byte[16], "AES");
 
     static
     {
@@ -110,11 +109,6 @@ public class EncryptionUtil
         BufferedBlockCipher cip = new BufferedBlockCipher(new CFBBlockCipher(new AESFastEngine(), 8));
         cip.init(forEncryption, new ParametersWithIV(new KeyParameter(shared.getEncoded()), shared.getEncoded()));
         return cip;
-    }
-
-    public static SecretKey getSecret()
-    {
-        return secret;
     }
 
     public static PublicKey getPubkey(PacketFDEncryptionRequest request) throws InvalidKeySpecException, NoSuchAlgorithmException

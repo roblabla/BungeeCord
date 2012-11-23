@@ -1,94 +1,79 @@
 package net.md_5.bungee;
 
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import java.security.PublicKey;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import lombok.RequiredArgsConstructor;
+import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.packet.Packet1Login;
-import net.md_5.bungee.packet.Packet2Handshake;
 import net.md_5.bungee.packet.PacketCDClientStatus;
 import net.md_5.bungee.packet.PacketFAPluginMessage;
 import net.md_5.bungee.packet.PacketFCEncryptionResponse;
 import net.md_5.bungee.packet.PacketFDEncryptionRequest;
 import net.md_5.bungee.packet.PacketFFKick;
-import net.md_5.bungee.packet.PacketInputStream;
-import org.bouncycastle.crypto.io.CipherInputStream;
-import org.bouncycastle.crypto.io.CipherOutputStream;
 
 /**
  * Class representing a connection from the proxy to the server; ie upstream.
  */
-public class ServerConnection extends GenericConnection
+@RequiredArgsConstructor
+public class ServerConnection implements PacketHandler
 {
 
-    public final String name;
-    public final Packet1Login loginPacket;
-
-    public ServerConnection(String name, Socket socket, PacketInputStream in, OutputStream out, Packet1Login loginPacket)
+     enum State
     {
-        super(socket, in, out);
-        this.name = name;
-        this.loginPacket = loginPacket;
+
+        RESPONSE, ACTIVATE, LOGIN;
+    }
+    State state = State.RESPONSE;
+    private static SecretKey secret = new SecretKeySpec(new byte[16], "AES");
+    private final UserConnection user;
+
+    @Override
+    public void disconnected(Channel channel)
+    {
     }
 
-    public static ServerConnection connect(UserConnection user, String name, InetSocketAddress address, Packet2Handshake handshake, boolean retry)
+    @Override
+    public void handle(Channel channel, ByteBuf buf)
     {
         try
         {
-            Socket socket = new Socket();
-            socket.connect(address, BungeeCord.instance.config.timeout);
-            BungeeCord.instance.setSocketOptions(socket);
-
-            PacketInputStream in = new PacketInputStream(socket.getInputStream());
-            OutputStream out = socket.getOutputStream();
-
-            out.write(handshake.getPacket());
-            PacketFDEncryptionRequest encryptRequest = new PacketFDEncryptionRequest(in.readPacket());
-
-            SecretKey myKey = EncryptionUtil.getSecret();
-            PublicKey pub = EncryptionUtil.getPubkey(encryptRequest);
-
-            PacketFCEncryptionResponse response = new PacketFCEncryptionResponse(EncryptionUtil.getShared(myKey, pub), EncryptionUtil.encrypt(pub, encryptRequest.verifyToken));
-            out.write(response.getPacket());
-
-            int ciphId = Util.getId(in.readPacket());
-            if (ciphId != 0xFC)
+            int id = Util.getId(buf);
+            switch (state)
             {
-                throw new RuntimeException("Server did not send encryption enable");
+                case RESPONSE:
+                    PacketFDEncryptionRequest encryptRequest = new PacketFDEncryptionRequest(buf);
+                    PublicKey pub = EncryptionUtil.getPubkey(encryptRequest);
+                    PacketFCEncryptionResponse response = new PacketFCEncryptionResponse(EncryptionUtil.getShared(secret, pub), EncryptionUtil.encrypt(pub, encryptRequest.verifyToken));
+                    channel.write(response);
+                    break;
+                case ACTIVATE:
+                    if (id != 0xFC)
+                    {
+                        throw new RuntimeException("Server did not send encryption enable");
+                    }
+                    Util.addCipher(channel, secret);
+
+                    for (ByteBuf custom : user.loginPackets)
+                    {
+                        channel.write(custom);
+                    }
+
+                    channel.write(new PacketCDClientStatus((byte) 0));
+                    break;
+                case LOGIN:
+                    if (id == 0xFF)
+                    {
+                        throw new KickException("[Kicked] " + new PacketFFKick(buf).message);
+                    }
+                    Packet1Login login = new Packet1Login(buf);
+                    channel.write(new PacketFAPluginMessage("REGISTER", "RubberBand".getBytes()));
+                    break;
             }
-
-            in = new PacketInputStream(new CipherInputStream(socket.getInputStream(), EncryptionUtil.getCipher(false, myKey)));
-            out = new CipherOutputStream(out, EncryptionUtil.getCipher(true, myKey));
-
-            for (byte[] custom : user.loginPackets)
-            {
-                out.write(custom);
-            }
-
-            out.write(new PacketCDClientStatus((byte) 0).getPacket());
-            byte[] loginResponse = in.readPacket();
-            if (Util.getId(loginResponse) == 0xFF)
-            {
-                throw new KickException("[Kicked] " + new PacketFFKick(loginResponse).message);
-            }
-            Packet1Login login = new Packet1Login(loginResponse);
-            out.write(new PacketFAPluginMessage("REGISTER", "RubberBand".getBytes()).getPacket());
-
-            return new ServerConnection(name, socket, in, out, login);
-        } catch (KickException ex)
-        {
-            throw ex;
         } catch (Exception ex)
         {
-            InetSocketAddress def = BungeeCord.instance.config.getServer(null);
-            if (retry && !address.equals(def))
-            {
-                return connect(user, name, def, handshake, false);
-            } else
-            {
-                throw new RuntimeException("Could not connect to target server " + Util.exception(ex));
-            }
         }
     }
 }

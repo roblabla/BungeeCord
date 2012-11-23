@@ -1,6 +1,11 @@
 package net.md_5.bungee;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
+import java.security.Key;
+import net.md_5.bungee.netty.CipherCodec;
+import net.md_5.bungee.packet.PacketFFKick;
 
 /**
  * Series of utility classes to perform various operations.
@@ -14,7 +19,7 @@ public class Util
      * Method to transform human readable addresses into usable address objects.
      *
      * @param hostline in the format of 'host:port'
-     * @return the constructed hostname + port.
+     * @return the constructed hostname + port
      */
     public static InetSocketAddress getAddr(String hostline)
     {
@@ -34,9 +39,9 @@ public class Util
      * @param b the array to read from
      * @return the unsigned value of the first byte
      */
-    public static int getId(byte[] b)
+    public static int getId(ByteBuf b)
     {
-        return b[0] & 0xFF;
+        return b.getUnsignedByte(0);
     }
 
     /**
@@ -75,11 +80,35 @@ public class Util
      * Constructs a pretty one line version of a {@link Throwable}. Useful for
      * debugging.
      *
-     * @param t the {@link Throwable} to format.
+     * @param t the {@link Throwable} to format
      * @return a string representing information about the {@link Throwable}
      */
     public static String exception(Throwable t)
     {
         return t.getClass().getSimpleName() + " : " + t.getMessage() + " @ " + t.getStackTrace()[0].getClassName() + ":" + t.getStackTrace()[0].getLineNumber();
+    }
+
+    /**
+     * Adds a cipher decoder and encoder to the specified channel, using the
+     * specified key.
+     *
+     * @param channel the {@link Channel} to encrypt
+     * @param shared the {@link Key} to be used when creating the ciphers
+     */
+    static void addCipher(Channel channel, Key shared)
+    {
+        channel.pipeline().addBefore("decoder", "cipher", new CipherCodec(EncryptionUtil.getCipher(true, shared), EncryptionUtil.getCipher(false, shared)));
+    }
+
+    /**
+     * Disconnect a players channel from the proxy.
+     *
+     * @param channel of the player
+     * @param message to disconnect the player with
+     */
+    static void kick(Channel channel, String message)
+    {
+        channel.write(new PacketFFKick(message));
+        channel.close();
     }
 }

@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class PacketCDClientStatus extends DefinedPacket
+public class PacketCDClientStatus extends Packet
 {
 
     /**

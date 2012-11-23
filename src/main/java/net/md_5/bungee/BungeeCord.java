@@ -1,10 +1,15 @@
 package net.md_5.bungee;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,7 +27,8 @@ import net.md_5.bungee.command.CommandMotd;
 import net.md_5.bungee.command.CommandSender;
 import net.md_5.bungee.command.CommandServer;
 import net.md_5.bungee.command.ConsoleCommandSender;
-import net.md_5.bungee.packet.DefinedPacket;
+import net.md_5.bungee.netty.MinecraftPipeline;
+import net.md_5.bungee.packet.Packet;
 import net.md_5.bungee.plugin.JavaPluginManager;
 import net.md_5.bungee.tablist.GlobalPingTabList;
 import net.md_5.bungee.tablist.GlobalTabList;
@@ -34,14 +40,15 @@ import net.md_5.bungee.tablist.TabListHandler;
  */
 public class BungeeCord
 {
+
     /**
      * Server protocol version.
      */
-    public static final int PROTOCOL_VERSION= 49;
+    public static final int PROTOCOL_VERSION = 49;
     /**
      * Server game version.
      */
-    public static final String GAME_VERSION = "1.4.4";
+    public static final String GAME_VERSION = "1.4.5";
     /**
      * Current software instance.
      */
@@ -65,7 +72,11 @@ public class BungeeCord
     /**
      * Server socket listener.
      */
-    private ListenThread listener;
+    private final EventLoopGroup eventGroup = new NioEventLoopGroup();
+    /**
+     * Server socket channel.
+     */
+    private Channel channel;
     /**
      * Current version.
      */
@@ -185,8 +196,11 @@ public class BungeeCord
         }
 
         InetSocketAddress addr = Util.getAddr(config.bindHost);
-        listener = new ListenThread(addr);
-        listener.start();
+        channel = new ServerBootstrap().
+                channel(NioServerSocketChannel.class).
+                childHandler(new MinecraftPipeline()).
+                childOption(ChannelOption.IP_TOS, 0x18).
+                group(eventGroup).localAddress(addr).bind().channel();
 
         saveThread.start();
         $().info("Listening on " + addr);
@@ -205,14 +219,7 @@ public class BungeeCord
         pluginManager.onDisable();
 
         $().info("Closing listen thread");
-        try
-        {
-            listener.socket.close();
-            listener.join();
-        } catch (InterruptedException | IOException ex)
-        {
-            $().severe("Could not close listen thread");
-        }
+        channel.close();
 
         $().info("Closing pending connections");
         threadPool.shutdown();
@@ -222,6 +229,7 @@ public class BungeeCord
         {
             user.disconnect("Proxy restarting, brb.");
         }
+        eventGroup.shutdown();
 
         $().info("Saving reconnect locations");
         saveThread.interrupt();
@@ -237,25 +245,11 @@ public class BungeeCord
     }
 
     /**
-     * Miscellaneous method to set options on a socket based on those in the
-     * configuration.
-     *
-     * @param socket to set the options on
-     * @throws IOException when the underlying set methods thrown an exception
-     */
-    public void setSocketOptions(Socket socket) throws IOException
-    {
-        socket.setSoTimeout(config.timeout);
-        socket.setTrafficClass(0x18);
-        socket.setTcpNoDelay(true);
-    }
-
-    /**
      * Broadcasts a packet to all clients that is connected to this instance.
      *
      * @param packet the packet to send
      */
-    public void broadcast(DefinedPacket packet)
+    public void broadcast(Packet packet)
     {
         for (UserConnection con : connections.values())
         {

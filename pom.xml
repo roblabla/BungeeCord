@@ -62,14 +62,14 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <version>2.0.1</version>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>13.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+            <version>4.0.0.Alpha7</version>
         </dependency>
         <dependency>
             <groupId>net.md-5</groupId>
@@ -78,7 +78,7 @@
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-ext-jdk15on</artifactId>
+            <artifactId>bcprov-jdk15on</artifactId>
             <version>1.47</version>
         </dependency>
         <dependency>
@@ -89,7 +89,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>0.11.4</version>
+            <version>0.11.6</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -167,39 +167,6 @@
                         </filter>
                     </filters>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>com.github.wvengen</groupId>
-                <artifactId>proguard-maven-plugin</artifactId>
-                <version>2.0.6</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>proguard</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <addMavenDescriptor>true</addMavenDescriptor>
-                    <includeDependency>false</includeDependency>
-                    <libs>
-                        <lib>${java.home}/lib/rt.jar</lib>
-                        <lib>${java.home}/lib/jce.jar</lib>
-                    </libs>
-                    <obfuscate>false</obfuscate>
-                    <options>
-                        <option>-dontoptimize</option>
-                        <option>-keep class net.md_5.bungee.** { *; }</option>
-                    </options>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>net.sf.proguard</groupId>
-                        <artifactId>proguard-base</artifactId>
-                        <version>4.8</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

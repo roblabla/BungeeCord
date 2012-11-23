@@ -1,11 +1,12 @@
 package net.md_5.bungee.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class PacketFDEncryptionRequest extends DefinedPacket
+public class PacketFDEncryptionRequest extends Packet
 {
 
     public String serverId;
@@ -15,7 +16,7 @@ public class PacketFDEncryptionRequest extends DefinedPacket
     public PacketFDEncryptionRequest(String serverId, byte[] publicKey, byte[] verifyToken)
     {
         super(0xFD);
-        writeUTF(serverId);
+        writeString(serverId);
         writeArray(publicKey);
         writeArray(verifyToken);
         this.serverId = serverId;
@@ -23,10 +24,10 @@ public class PacketFDEncryptionRequest extends DefinedPacket
         this.verifyToken = verifyToken;
     }
 
-    public PacketFDEncryptionRequest(byte[] buf)
+    public PacketFDEncryptionRequest(ByteBuf buf)
     {
         super(0xFD, buf);
-        serverId = readUTF();
+        serverId = readString();
         publicKey = readArray();
         verifyToken = readArray();
     }

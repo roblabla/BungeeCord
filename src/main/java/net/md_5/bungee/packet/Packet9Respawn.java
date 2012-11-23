@@ -1,11 +1,12 @@
 package net.md_5.bungee.packet;
 
+import io.netty.buffer.ByteBuf;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class Packet9Respawn extends DefinedPacket
+public class Packet9Respawn extends Packet
 {
 
     public int dimension;
@@ -21,16 +22,16 @@ public class Packet9Respawn extends DefinedPacket
         writeByte(difficulty);
         writeByte(gameMode);
         writeShort(worldHeight);
-        writeUTF(levelType);
+        writeString(levelType);
     }
 
-    public Packet9Respawn(byte[] buf)
+    public Packet9Respawn(ByteBuf buf)
     {
         super(0x09, buf);
         this.dimension = readInt();
         this.difficulty = readByte();
         this.gameMode = readByte();
         this.worldHeight = readShort();
-        this.levelType = readUTF();
+        this.levelType = readString();
     }
 }

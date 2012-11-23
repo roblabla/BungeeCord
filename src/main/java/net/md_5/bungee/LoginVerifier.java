@@ -1,0 +1,50 @@
+package net.md_5.bungee;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import java.net.InetSocketAddress;
+import javax.crypto.SecretKey;
+import lombok.RequiredArgsConstructor;
+import net.md_5.bungee.packet.PacketFCEncryptionResponse;
+import net.md_5.bungee.plugin.LoginEvent;
+
+@RequiredArgsConstructor
+public class LoginVerifier implements Runnable
+{
+
+    private final Channel channel;
+    private final InitialHandler handler;
+    private final ByteBuf packet;
+
+    @Override
+    public void run()
+    {
+        try
+        {
+            PacketFCEncryptionResponse response = new PacketFCEncryptionResponse(packet);
+            SecretKey shared = EncryptionUtil.getSecret(response, handler.encryptionRequest);
+            if (!EncryptionUtil.isAuthenticated(handler.handshake.username, handler.encryptionRequest.serverId, shared))
+            {
+                throw new KickException("Not authenticated with minecraft.net");
+            }
+
+            // fire post auth event
+            LoginEvent event = new LoginEvent(handler.handshake.username, ((InetSocketAddress) channel.remoteAddress()).getAddress(), handler.handshake.host);
+            BungeeCord.instance.pluginManager.onHandshake(event);
+            if (event.isCancelled())
+            {
+                throw new KickException(event.getCancelReason());
+            }
+
+            channel.write(new PacketFCEncryptionResponse());
+            Util.addCipher(channel, shared);
+            handler.state = InitialHandler.State.LOGIN;
+        } catch (KickException ex)
+        {
+            Util.kick(channel, ex.getMessage());
+        } catch (Exception ex)
+        {
+            Util.kick(channel, "[Auth Error] " + Util.exception(ex));
+        }
+    }
+}
