@@ -45,6 +45,10 @@ public class EncryptionUtil
     private static final Random random = new Random();
     private static KeyPair keys;
 
+    private EncryptionUtil()
+    {
+    }
+
     static
     {
         Security.addProvider(new BouncyCastleProvider());

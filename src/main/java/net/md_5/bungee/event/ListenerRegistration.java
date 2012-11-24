@@ -7,7 +7,7 @@ public class ListenerRegistration
 {
 
     private final EventExecutor executor;
-    private final Order orderSlot;
+    private final EventPriority orderSlot;
     private final Object owner;
 
     /**
@@ -15,7 +15,7 @@ public class ListenerRegistration
      * @param orderSlot Order position this registration is in
      * @param owner object that created this registration
      */
-    public ListenerRegistration(final EventExecutor executor, final Order orderSlot, final Object owner)
+    public ListenerRegistration(final EventExecutor executor, final EventPriority orderSlot, final Object owner)
     {
         this.executor = executor;
         this.orderSlot = orderSlot;
@@ -47,7 +47,7 @@ public class ListenerRegistration
      *
      * @return Registered order
      */
-    public Order getOrder()
+    public EventPriority getOrder()
     {
         return orderSlot;
     }

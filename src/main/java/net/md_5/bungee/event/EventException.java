@@ -1,6 +1,5 @@
 package net.md_5.bungee.event;
 
-@SuppressWarnings("serial")
 public class EventException extends Exception
 {
 

@@ -1,5 +1,6 @@
 package net.md_5.bungee.event;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,6 +19,7 @@ public class SimpleEventManager implements EventManager
         this.logger = logger;
     }
 
+    @Override
     public <T extends Event> T callEvent(T event)
     {
         HandlerList handlers = event.getHandlers();
@@ -29,7 +31,7 @@ public class SimpleEventManager implements EventManager
             {
                 try
                 {
-                    if (!event.isCancelled() || listener.getOrder().ignoresCancelled())
+                    if (!event.isCancelled() || listener.getOrder().ordinal() % 2 == 1) // odd numbers ignore cancelled
                     {
                         listener.getExecutor().execute(event);
                     }
@@ -42,6 +44,7 @@ public class SimpleEventManager implements EventManager
         return event;
     }
 
+    @Override
     public void registerEvents(Listener listener, Object owner)
     {
         for (Map.Entry<Class<? extends Event>, Set<ListenerRegistration>> entry : createRegisteredListeners(listener, owner).entrySet())
@@ -56,7 +59,8 @@ public class SimpleEventManager implements EventManager
         }
     }
 
-    public void registerEvent(Class<? extends Event> event, Order priority, EventExecutor executor, Object owner)
+    @Override
+    public void registerEvent(Class<? extends Event> event, EventPriority priority, EventExecutor executor, Object owner)
     {
         getEventListeners(event).register(new ListenerRegistration(executor, priority, owner));
     }
@@ -74,7 +78,7 @@ public class SimpleEventManager implements EventManager
             Method method = getRegistrationClass(type).getDeclaredMethod("getHandlerList");
             method.setAccessible(true);
             return (HandlerList) method.invoke(null);
-        } catch (Exception e)
+        } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e)
         {
             throw new IllegalArgumentException(e.toString());
         }
@@ -100,7 +104,7 @@ public class SimpleEventManager implements EventManager
 
     public Map<Class<? extends Event>, Set<ListenerRegistration>> createRegisteredListeners(final Listener listener, Object plugin)
     {
-        Map<Class<? extends Event>, Set<ListenerRegistration>> ret = new HashMap<Class<? extends Event>, Set<ListenerRegistration>>();
+        Map<Class<? extends Event>, Set<ListenerRegistration>> ret = new HashMap<>();
         Method[] methods;
         try
         {
@@ -131,11 +135,12 @@ public class SimpleEventManager implements EventManager
             Set<ListenerRegistration> eventSet = ret.get(eventClass);
             if (eventSet == null)
             {
-                eventSet = new HashSet<ListenerRegistration>();
+                eventSet = new HashSet<>();
                 ret.put(eventClass, eventSet);
             }
             eventSet.add(new ListenerRegistration(new EventExecutor()
             {
+                @Override
                 public void execute(Event event) throws EventException
                 {
                     try
@@ -150,7 +155,7 @@ public class SimpleEventManager implements EventManager
                         throw new EventException(t);
                     }
                 }
-            }, eh.order(), plugin));
+            }, eh.priority(), plugin));
         }
         return ret;
     }

@@ -1,6 +1,5 @@
 package net.md_5.bungee;
 
-import net.md_5.bungee.connection.UserConnection;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
@@ -28,6 +27,7 @@ import net.md_5.bungee.command.CommandMotd;
 import net.md_5.bungee.command.CommandSender;
 import net.md_5.bungee.command.CommandServer;
 import net.md_5.bungee.command.ConsoleCommandSender;
+import net.md_5.bungee.connection.UserConnection;
 import net.md_5.bungee.netty.MinecraftPipeline;
 import net.md_5.bungee.packet.Packet;
 import net.md_5.bungee.plugin.JavaPluginManager;

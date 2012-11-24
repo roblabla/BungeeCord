@@ -10,6 +10,10 @@ public class EntityMap
 
     public final static int[][] entityIds = new int[256][];
 
+    private EntityMap()
+    {
+    }
+
     static
     {
         entityIds[0x05] = new int[]

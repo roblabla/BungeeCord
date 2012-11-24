@@ -8,7 +8,7 @@ import java.util.ListIterator;
 import java.util.Map.Entry;
 
 /**
- * A list of event handlers, stored per-event. Based on lahwran's fevents.
+ * A list of event handlers, stored per-event.
  */
 public class HandlerList
 {
@@ -23,16 +23,16 @@ public class HandlerList
      * unregister() and are automatically baked to the handlers array any time
      * they have changed.
      */
-    private final EnumMap<Order, ArrayList<ListenerRegistration>> handlerslots;
+    private final EnumMap<EventPriority, ArrayList<ListenerRegistration>> handlerslots;
     /**
      * List of all HandlerLists which have been created, for use in bakeAll()
      */
-    private static ArrayList<HandlerList> alllists = new ArrayList<HandlerList>();
+    private static ArrayList<HandlerList> alllists = new ArrayList<>();
 
     /**
      * Bake all handler lists. Best used just after all normal event
      * registration is complete, ie just after all plugins are loaded if you're
-     * using fevents in a plugin system.
+     * using this in a plugin system.
      */
     public static void bakeAll()
     {
@@ -64,12 +64,12 @@ public class HandlerList
 
     /**
      * Create a new handler list and initialize using EventPriority The
-     * HandlerList is then added to meta-list for use in bakeAll()
+     * HandlerList is then added to meta-list for use in {@link bakeAll()}.
      */
     public HandlerList()
     {
-        handlerslots = new EnumMap<Order, ArrayList<ListenerRegistration>>(Order.class);
-        for (Order o : Order.values())
+        handlerslots = new EnumMap<>(EventPriority.class);
+        for (EventPriority o : EventPriority.values())
         {
             handlerslots.put(o, new ArrayList<ListenerRegistration>());
         }
@@ -77,7 +77,7 @@ public class HandlerList
     }
 
     /**
-     * Register a new listener in this handler list
+     * Register a new listener in this handler list.
      *
      * @param listener listener to register
      */
@@ -100,7 +100,7 @@ public class HandlerList
     }
 
     /**
-     * Remove a listener from a specific order slot
+     * Remove a listener from a specific order slot.
      *
      * @param listener listener to remove
      */
@@ -134,7 +134,7 @@ public class HandlerList
     }
 
     /**
-     * Bake HashMap and ArrayLists to 2d array - does nothing if not necessary
+     * Bake HashMap and ArrayLists to 2d array - does nothing if not necessary.
      */
     public void bake()
     {
@@ -142,8 +142,8 @@ public class HandlerList
         {
             return; // don't re-bake when still valid
         }
-        List<ListenerRegistration> entries = new ArrayList<ListenerRegistration>();
-        for (Entry<Order, ArrayList<ListenerRegistration>> entry : handlerslots.entrySet())
+        List<ListenerRegistration> entries = new ArrayList<>();
+        for (Entry<EventPriority, ArrayList<ListenerRegistration>> entry : handlerslots.entrySet())
         {
             entries.addAll(entry.getValue());
         }

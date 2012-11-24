@@ -6,12 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An annotation to mark methods as being event handler methods
+ * An annotation to mark methods as being event handler methods.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EventHandler
 {
 
-    Order order() default Order.DEFAULT;
+    EventPriority priority() default EventPriority.NORMAL;
 }

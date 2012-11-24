@@ -37,7 +37,8 @@ public abstract class Event
 
     /**
      * Set cancelled status. Events which wish to be cancellable should
-     * implement Cancellable and implement setCancelled as:
+     * implement {@link Cancellable }and implement
+     * {@link #setCancelled(boolean)} as:
      *
      * <pre>
      * public void setCancelled(boolean cancelled) {
@@ -53,11 +54,11 @@ public abstract class Event
     }
 
     /**
-     * Returning true will prevent calling any even Order slots.
+     * Returning true will prevent calling any even {@link EventPriority} slots.
      *
-     * @see Order
+     * @see EventPriority
      * @return false if the event is propagating; events which do not implement
-     * Cancellable should never return true here
+     * {@link Cancellable} should never return true here
      */
     public boolean isCancelled()
     {

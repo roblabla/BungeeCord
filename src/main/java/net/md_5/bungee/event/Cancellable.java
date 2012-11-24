@@ -7,7 +7,7 @@ public interface Cancellable
 {
 
     /**
-     * If an event stops propogating (ie, is cancelled) partway through an even
+     * If an event stops propagating (ie, is cancelled) partway through an even
      * slot, that slot will not cease execution, but future even slots will not
      * be called.
      *
@@ -18,7 +18,7 @@ public interface Cancellable
     /**
      * Get event canceled state.
      *
-     * @return whether event is cancelled
+     * @return whether event is canceled
      */
     public boolean isCancelled();
 }
