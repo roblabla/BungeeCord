@@ -26,70 +26,62 @@ public class InitialHandler implements PacketHandler
     private List<ByteBuf> customPackets;
 
     @Override
-    public void disconnected(Channel channel)
+    public void disconnected(Channel channel) throws Exception
     {
     }
 
     @Override
-    public void handle(Channel channel, ByteBuf buf)
+    public void handle(Channel channel, ByteBuf buf) throws Exception
     {
-        try
-        {
-            int id = Util.getId(buf);
-            switch (state)
-            {
-                case HANDSHAKE:
-                    switch (id)
-                    {
-                        case 0x02:
-                            handshake = new Packet2Handshake(buf);
-                            LoginEvent event = new LoginEvent(handshake.username, ((InetSocketAddress) channel.remoteAddress()).getAddress(), handshake.host);
-                            BungeeCord.instance.pluginManager.onHandshake(event);
-                            if (event.isCancelled())
-                            {
-                                throw new KickException(event.getCancelReason());
-                            }
 
-                            encryptionRequest = EncryptionUtil.encryptRequest();
-                            channel.write(encryptionRequest);
-                            state = State.RESPONSE;
-                            break;
-                        case 0xFE:
-                            Configuration conf = BungeeCord.instance.config;
-                            String message = ChatColor.COLOR_CHAR + "1"
-                                    + "\00" + BungeeCord.PROTOCOL_VERSION
-                                    + "\00" + BungeeCord.GAME_VERSION
-                                    + "\00" + conf.motd
-                                    + "\00" + BungeeCord.instance.connections.size()
-                                    + "\00" + conf.maxPlayers;
-                            throw new KickException(message);
-                        default:
-                            throw new KickException("Was not prepared to deal with packet " + Util.hex(id) + " at " + state);
-                    }
-                    break;
-                case RESPONSE:
-                    BungeeCord.instance.threadPool.submit(new LoginVerifier(channel, this, buf));
-                    break;
-                case LOGIN:
-                    if (buf.readUnsignedByte() != 0xCD)
-                    {
-                        if (customPackets == null)
+        int id = Util.getId(buf);
+        switch (state)
+        {
+            case HANDSHAKE:
+                switch (id)
+                {
+                    case 0x02:
+                        handshake = new Packet2Handshake(buf);
+                        LoginEvent event = new LoginEvent(handshake.username, ((InetSocketAddress) channel.remoteAddress()).getAddress(), handshake.host);
+                        BungeeCord.instance.pluginManager.onHandshake(event);
+                        if (event.isCancelled())
                         {
-                            customPackets = new ArrayList<>();
+                            throw new KickException(event.getCancelReason());
                         }
-                        customPackets.add(buf);
-                    } else
+
+                        encryptionRequest = EncryptionUtil.encryptRequest();
+                        channel.write(encryptionRequest);
+                        state = State.RESPONSE;
+                        break;
+                    case 0xFE:
+                        Configuration conf = BungeeCord.instance.config;
+                        String message = ChatColor.COLOR_CHAR + "1"
+                                + "\00" + BungeeCord.PROTOCOL_VERSION
+                                + "\00" + BungeeCord.GAME_VERSION
+                                + "\00" + conf.motd
+                                + "\00" + BungeeCord.instance.connections.size()
+                                + "\00" + conf.maxPlayers;
+                        throw new KickException(message);
+                    default:
+                        throw new KickException("Was not prepared to deal with packet " + Util.hex(id) + " at " + state);
+                }
+                break;
+            case RESPONSE:
+                BungeeCord.instance.threadPool.submit(new LoginVerifier(channel, this, buf));
+                break;
+            case LOGIN:
+                if (buf.readUnsignedByte() != 0xCD)
+                {
+                    if (customPackets == null)
                     {
-                        throw new UnsupportedOperationException();
+                        customPackets = new ArrayList<>();
                     }
-                    break;
-            }
-        } catch (KickException ex)
-        {
-            Util.kick(channel, ex.getMessage());
-        } catch (Exception ex)
-        {
-            Util.kick(channel, "[Proxy Error] " + Util.exception(ex));
+                    customPackets.add(buf);
+                } else
+                {
+                    throw new UnsupportedOperationException();
+                }
+                break;
         }
     }
 }

@@ -1,14 +1,9 @@
 package net.md_5.bungee;
 
-import .*;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.Socket;
+import io.netty.channel.Channel;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import static net.md_5.bungee.Logger.$;
-import net.md_5.bungee.packet.PacketFFKick;
-import net.md_5.bungee.packet.PacketInputStream;
 
 /**
  * Class to represent a Minecraft connection.
@@ -18,9 +13,7 @@ import net.md_5.bungee.packet.PacketInputStream;
 public class GenericConnection
 {
 
-    protected final Socket socket;
-    protected final PacketInputStream in;
-    protected final OutputStream out;
+    protected final Channel channel;
     public String username;
 
     /**
@@ -30,31 +23,12 @@ public class GenericConnection
      */
     public void disconnect(String reason)
     {
-        if (socket.isClosed())
-        {
-            return;
-        }
         log("disconnected with " + reason);
-        try
-        {
-            out.write(new PacketFFKick("[Proxy] " + reason).getPacket());
-        } catch (IOException ex)
-        {
-        } finally
-        {
-            try
-            {
-                out.flush();
-                out.close();
-                socket.close();
-            } catch (IOException ioe)
-            {
-            }
-        }
+        Util.kick(channel, reason);
     }
 
     public void log(String message)
     {
-        $().info(socket.getInetAddress() + ((username == null) ? " " : " [" + username + "] ") + message);
+        $().info(channel.remoteAddress() + ((username == null) ? " " : " [" + username + "] ") + message);
     }
 }

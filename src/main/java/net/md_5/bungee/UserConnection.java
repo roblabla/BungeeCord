@@ -1,25 +1,21 @@
 package net.md_5.bungee;
 
 import io.netty.buffer.ByteBuf;
-import java.io.IOException;
-import java.io.OutputStream;
+import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import net.md_5.bungee.command.CommandSender;
+import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.packet.Packet;
 import net.md_5.bungee.packet.Packet0KeepAlive;
-import net.md_5.bungee.packet.Packet1Login;
 import net.md_5.bungee.packet.Packet2Handshake;
 import net.md_5.bungee.packet.Packet3Chat;
-import net.md_5.bungee.packet.Packet9Respawn;
 import net.md_5.bungee.packet.PacketC9PlayerListItem;
 import net.md_5.bungee.packet.PacketFAPluginMessage;
-import net.md_5.bungee.packet.PacketInputStream;
 import net.md_5.bungee.plugin.ServerConnectEvent;
 
 public class UserConnection extends GenericConnection implements CommandSender
@@ -28,21 +24,21 @@ public class UserConnection extends GenericConnection implements CommandSender
     public final Packet2Handshake handshake;
     public Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
     public List<ByteBuf> loginPackets = new ArrayList<>();
-    private ServerConnection server;
+    ServerConnection server;
     private UpstreamBridge upBridge;
     private DownstreamBridge downBridge;
     // reconnect stuff
-    private int clientEntityId;
-    private int serverEntityId;
-    private volatile boolean reconnecting;
+    int clientEntityId;
+    int serverEntityId;
+    volatile boolean reconnecting;
     // ping stuff
     private int trackingPingId;
     private long pingTime;
     private int ping;
 
-    public UserConnection(Socket socket, PacketInputStream in, OutputStream out, Packet2Handshake handshake, List<byte[]> loginPackets)
+    public UserConnection(Channel channel, Packet2Handshake handshake, List<ByteBuf> loginPackets)
     {
-        super(socket, in, out);
+        super(channel);
         this.handshake = handshake;
         username = handshake.username;
         this.loginPackets = loginPackets;
@@ -75,57 +71,11 @@ public class UserConnection extends GenericConnection implements CommandSender
 
     private void connect(String name, InetSocketAddress serverAddr)
     {
-        BungeeCord.instance.tabListHandler.onServerChange(this);
-        try
-        {
-            reconnecting = true;
-
-            if (server != null)
-            {
-                out.write(new Packet9Respawn((byte) 1, (byte) 0, (byte) 0, (short) 256, "DEFAULT").getPacket());
-                out.write(new Packet9Respawn((byte) -1, (byte) 0, (byte) 0, (short) 256, "DEFAULT").getPacket());
-            }
-
-            ServerConnection newServer = ServerConnection.connect(this, name, serverAddr, handshake, server == null);
-            if (server == null)
-            {
-                clientEntityId = newServer.loginPacket.entityId;
-                serverEntityId = newServer.loginPacket.entityId;
-                out.write(newServer.loginPacket.getPacket());
-                upBridge = new UpstreamBridge();
-                upBridge.start();
-            } else
-            {
-                try
-                {
-                    downBridge.interrupt();
-                    downBridge.join();
-                } catch (InterruptedException ie)
-                {
-                }
-
-                server.disconnect("Quitting");
-
-                Packet1Login login = newServer.loginPacket;
-                serverEntityId = login.entityId;
-                out.write(new Packet9Respawn(login.dimension, login.difficulty, login.gameMode, (short) 256, login.levelType).getPacket());
-            }
-            reconnecting = false;
-            downBridge = new DownstreamBridge();
-            server = newServer;
-            downBridge.start();
-        } catch (KickException ex)
-        {
-            destroySelf(ex.getMessage());
-        } catch (Exception ex)
-        {
-            destroySelf("Could not connect to server");
-        }
     }
 
     public SocketAddress getAddress()
     {
-        return socket.getRemoteSocketAddress();
+        return channel.remoteAddress();
     }
 
     public int getPing()
@@ -172,112 +122,90 @@ public class UserConnection extends GenericConnection implements CommandSender
         return username;
     }
 
-    private class UpstreamBridge extends Thread
+    private class UpstreamBridge implements PacketHandler
     {
 
-        public UpstreamBridge()
+        @Override
+        public void disconnected(Channel channel) throws Exception
         {
-            super("Upstream Bridge - " + username);
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
         @Override
-        public void run()
+        public void handle(Channel channel, ByteBuf buf) throws Exception
         {
-            while (!socket.isClosed())
+            boolean sendPacket = true;
+
+            int id = Util.getId(buf);
+            if (id == 0x03)
             {
-                try
+                Packet3Chat chat = new Packet3Chat(buf);
+                String message = chat.message;
+                if (message.startsWith("/"))
                 {
-                    byte[] packet = in.readPacket();
-                    boolean sendPacket = true;
-
-                    int id = Util.getId(packet);
-                    if (id == 0x03)
-                    {
-                        Packet3Chat chat = new Packet3Chat(packet);
-                        String message = chat.message;
-                        if (message.startsWith("/"))
-                        {
-                            sendPacket = !BungeeCord.instance.dispatchCommand(message.substring(1), UserConnection.this);
-                        }
-                    } else if (id == 0x00)
-                    {
-                        if (trackingPingId == new Packet0KeepAlive(packet).id)
-                        {
-                            setPing((int) (System.currentTimeMillis() - pingTime));
-                        }
-                    }
-
-                    EntityMap.rewrite(packet, clientEntityId, serverEntityId);
-                    if (sendPacket && !server.socket.isClosed())
-                    {
-                        server.out.write(packet);
-                    }
-                } catch (IOException ex)
-                {
-                    destroySelf("Reached end of stream");
-                } catch (Exception ex)
-                {
-                    destroySelf(Util.exception(ex));
+                    sendPacket = !BungeeCord.instance.dispatchCommand(message.substring(1), UserConnection.this);
                 }
+            } else if (id == 0x00)
+            {
+                if (trackingPingId == new Packet0KeepAlive(buf).id)
+                {
+                    setPing((int) (System.currentTimeMillis() - pingTime));
+                }
+            }
+
+            EntityMap.rewrite(buf, clientEntityId, serverEntityId);
+            if (sendPacket)
+            {
+                server.GenericConnection.this.channel.write(buf);
             }
         }
     }
 
-    private class DownstreamBridge extends Thread
+    private class DownstreamBridge implements PacketHandler
     {
 
-        public DownstreamBridge()
+        @Override
+        public void disconnected(Channel channel) throws Exception
         {
-            super("Downstream Bridge - " + username);
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
         @Override
-        public void run()
+        public void handle(Channel channel, ByteBuf buf) throws Exception
         {
-            try
+            int id = Util.getId(buf);
+            if (id == 0xFA)
             {
-                while (!reconnecting)
+                PacketFAPluginMessage message = new PacketFAPluginMessage(buf);
+                if (message.tag.equals("RubberBand"))
                 {
-                    byte[] packet = server.in.readPacket();
-
-                    int id = Util.getId(packet);
-                    if (id == 0xFA)
-                    {
-                        PacketFAPluginMessage message = new PacketFAPluginMessage(packet);
-                        if (message.tag.equals("RubberBand"))
-                        {
-                            String server = new String(message.data);
-                            connect(server);
-                            break;
-                        }
-                    } else if (id == 0x00)
-                    {
-                        trackingPingId = new Packet0KeepAlive(packet).id;
-                        pingTime = System.currentTimeMillis();
-                    } else if (id == 0xC9)
-                    {
-                        if (!BungeeCord.instance.tabListHandler.onPacketC9(UserConnection.this, new PacketC9PlayerListItem(packet)))
-                        {
-                            continue;
-                        }
-                    }
-
-                    while (!packetQueue.isEmpty())
-                    {
-                        Packet p = packetQueue.poll();
-                        if (p != null)
-                        {
-                            out.write(p.getPacket());
-                        }
-                    }
-
-                    EntityMap.rewrite(packet, serverEntityId, clientEntityId);
-                    out.write(packet);
+                    String server = new String(message.data);
+                    connect(server);
+                    return;
                 }
-            } catch (Exception ex)
+            } else if (id == 0x00)
             {
-                destroySelf(Util.exception(ex));
+                trackingPingId = new Packet0KeepAlive(buf).id;
+                pingTime = System.currentTimeMillis();
+            } else if (id == 0xC9)
+            {
+                if (!BungeeCord.instance.tabListHandler.onPacketC9(UserConnection.this, new PacketC9PlayerListItem(buf)))
+                {
+                    return;
+                }
             }
+
+            while (!packetQueue.isEmpty())
+            {
+                Packet p = packetQueue.poll();
+                if (p != null)
+                {
+                    channel.write(p);
+                }
+            }
+
+            EntityMap.rewrite(buf, serverEntityId, clientEntityId);
+            channel.write(buf);
         }
     }
 }

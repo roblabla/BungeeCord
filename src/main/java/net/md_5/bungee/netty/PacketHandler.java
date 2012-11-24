@@ -6,7 +6,7 @@ import io.netty.channel.Channel;
 public interface PacketHandler
 {
 
-    public void disconnected(Channel channel);
+    public void disconnected(Channel channel) throws Exception;
 
-    public void handle(Channel channel, ByteBuf buf);
+    public void handle(Channel channel, ByteBuf buf) throws Exception;
 }
