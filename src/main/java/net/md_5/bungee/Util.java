@@ -89,24 +89,12 @@ public class Util
     }
 
     /**
-     * Adds a cipher decoder and encoder to the specified channel, using the
-     * specified key.
-     *
-     * @param channel the {@link Channel} to encrypt
-     * @param shared the {@link Key} to be used when creating the ciphers
-     */
-    static void addCipher(Channel channel, Key shared)
-    {
-        channel.pipeline().addBefore("decoder", "cipher", new CipherCodec(EncryptionUtil.getCipher(true, shared), EncryptionUtil.getCipher(false, shared)));
-    }
-
-    /**
      * Disconnect a players channel from the proxy.
      *
      * @param channel of the player
      * @param message to disconnect the player with
      */
-    static void kick(Channel channel, String message)
+    public static void kick(Channel channel, String message)
     {
         channel.write(new PacketFFKick(message));
         channel.close();

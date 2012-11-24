@@ -1,5 +1,6 @@
 package net.md_5.bungee;
 
+import net.md_5.bungee.connection.UserConnection;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;

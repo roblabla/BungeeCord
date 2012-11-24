@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.connection.UserConnection;
 import net.md_5.bungee.packet.PacketC9PlayerListItem;
 
 public class ServerUniqueTabList implements TabListHandler

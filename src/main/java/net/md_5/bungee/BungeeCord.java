@@ -1,5 +1,6 @@
 package net.md_5.bungee;
 
+import net.md_5.bungee.connection.UserConnection;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;

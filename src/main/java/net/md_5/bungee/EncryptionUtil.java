@@ -1,5 +1,6 @@
 package net.md_5.bungee;
 
+import io.netty.channel.Channel;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -25,6 +26,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import net.md_5.bungee.netty.CipherCodec;
 import net.md_5.bungee.packet.PacketFCEncryptionResponse;
 import net.md_5.bungee.packet.PacketFDEncryptionRequest;
 import org.bouncycastle.crypto.BufferedBlockCipher;
@@ -128,5 +130,17 @@ public class EncryptionUtil
         Cipher cipher = Cipher.getInstance("RSA");
         cipher.init(Cipher.ENCRYPT_MODE, pubkey);
         return cipher.doFinal(key.getEncoded());
+    }
+
+    /**
+     * Adds a cipher decoder and encoder to the specified channel, using the
+     * specified key.
+     *
+     * @param channel the {@link Channel} to encrypt
+     * @param shared the {@link Key} to be used when creating the ciphers
+     */
+    public static void addCipher(Channel channel, Key shared)
+    {
+        channel.pipeline().addBefore("decoder", "cipher", new CipherCodec(getCipher(true, shared), getCipher(false, shared)));
     }
 }

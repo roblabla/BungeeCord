@@ -1,8 +1,9 @@
-package net.md_5.bungee;
+package net.md_5.bungee.connection;
 
 import io.netty.channel.Channel;
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
+import net.md_5.bungee.Util;
 import static net.md_5.bungee.Logger.$;
 
 /**
@@ -27,6 +28,12 @@ public class GenericConnection
         Util.kick(channel, reason);
     }
 
+    /**
+     * Log a message as an instance of this connection. Will include connected
+     * address and username if applicable.
+     *
+     * @param message to log
+     */
     public void log(String message)
     {
         $().info(channel.remoteAddress() + ((username == null) ? " " : " [" + username + "] ") + message);

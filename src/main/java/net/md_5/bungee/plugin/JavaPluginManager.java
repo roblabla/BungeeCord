@@ -1,13 +1,14 @@
 package net.md_5.bungee.plugin;
 
-import com.google.common.io.PatternFilenameFilter;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import lombok.Getter;
 import static net.md_5.bungee.Logger.$;
@@ -24,6 +25,7 @@ public class JavaPluginManager extends JavaPlugin
      */
     @Getter
     private final Set<JavaPlugin> plugins = new HashSet<>();
+    private static final Pattern pattern = Pattern.compile(".*\\.jar");
 
     /**
      * Load all plugins from the plugins folder. This method must only be called
@@ -34,7 +36,14 @@ public class JavaPluginManager extends JavaPlugin
         File dir = new File("plugins");
         dir.mkdir();
 
-        for (File file : dir.listFiles(new PatternFilenameFilter(".*\\.jar")))
+        for (File file : dir.listFiles(new FilenameFilter()
+        {
+            @Override
+            public boolean accept(File dir, String name)
+            {
+                return pattern.matcher(name).matches();
+            }
+        }))
         {
             try
             {

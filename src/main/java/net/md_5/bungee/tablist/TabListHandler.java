@@ -1,6 +1,6 @@
 package net.md_5.bungee.tablist;
 
-import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.connection.UserConnection;
 import net.md_5.bungee.packet.PacketC9PlayerListItem;
 
 public interface TabListHandler
@@ -14,5 +14,11 @@ public interface TabListHandler
 
     public void onDisconnect(UserConnection con);
 
+    /**
+     *
+     * @param con
+     * @param packet
+     * @return if we handled it
+     */
     public boolean onPacketC9(UserConnection con, PacketC9PlayerListItem packet);
 }

@@ -1,10 +1,13 @@
-package net.md_5.bungee;
+package net.md_5.bungee.connection;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import java.security.PublicKey;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import net.md_5.bungee.EncryptionUtil;
+import net.md_5.bungee.KickException;
+import net.md_5.bungee.Util;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.packet.Packet1Login;
 import net.md_5.bungee.packet.Packet9Respawn;

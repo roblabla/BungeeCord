@@ -37,7 +37,7 @@ public class LoginVerifier implements Runnable
             }
 
             channel.write(new PacketFCEncryptionResponse());
-            Util.addCipher(channel, shared);
+            EncryptionUtil.addCipher(channel, shared);
             handler.state = InitialHandler.State.LOGIN;
         } catch (KickException ex)
         {

@@ -1,7 +1,7 @@
 package net.md_5.bungee.plugin;
 
 import lombok.Data;
-import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.connection.UserConnection;
 
 /**
  * Event called when the decision is made to decide which server to connect to.

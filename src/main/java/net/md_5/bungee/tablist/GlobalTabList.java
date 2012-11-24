@@ -5,13 +5,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import net.md_5.bungee.BungeeCord;
-import net.md_5.bungee.UserConnection;
+import net.md_5.bungee.connection.UserConnection;
 import net.md_5.bungee.packet.PacketC9PlayerListItem;
 
 public class GlobalTabList implements TabListHandler
 {
 
-    private Set<UserConnection> sentPings = Collections.synchronizedSet(new HashSet<UserConnection>());
+    private final Set<UserConnection> sentPings = Collections.synchronizedSet(new HashSet<UserConnection>());
 
     @Override
     public void onJoin(UserConnection con)
