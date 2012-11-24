@@ -6,6 +6,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import net.md_5.bungee.plugin.JavaPlugin;
 
 /**
  * A list of event handlers, stored per-event.
@@ -54,7 +55,7 @@ public class HandlerList
         }
     }
 
-    public static void unregisterAll(Object plugin)
+    public static void unregisterAll(JavaPlugin plugin)
     {
         for (HandlerList h : alllists)
         {
@@ -113,7 +114,7 @@ public class HandlerList
         }
     }
 
-    public void unregister(Object owner)
+    public void unregister(JavaPlugin owner)
     {
         boolean changed = false;
         for (List<ListenerRegistration> list : handlerslots.values())

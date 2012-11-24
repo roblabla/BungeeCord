@@ -14,7 +14,7 @@ import static net.md_5.bungee.Logger.$;
 public class GenericConnection
 {
 
-    protected final Channel channel;
+    public final Channel channel;
     public String username;
 
     /**

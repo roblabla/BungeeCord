@@ -43,7 +43,7 @@ public class InitialHandler implements PacketHandler
                     case 0x02:
                         handshake = new Packet2Handshake(buf);
                         LoginEvent event = new LoginEvent(handshake.username, ((InetSocketAddress) channel.remoteAddress()).getAddress(), handshake.host);
-                        BungeeCord.instance.pluginManager.onHandshake(event);
+                        BungeeCord.instance.pluginManager.callEvent(event);
                         if (event.isCancelled())
                         {
                             throw new KickException(event.getCancelReason());

@@ -217,7 +217,7 @@ public class BungeeCord
     {
         this.isRunning = false;
         $().info("Disabling plugin");
-        pluginManager.onDisable();
+        pluginManager.disablePlugins();
 
         $().info("Closing listen thread");
         channel.close();

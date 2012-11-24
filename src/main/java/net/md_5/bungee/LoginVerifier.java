@@ -30,7 +30,7 @@ public class LoginVerifier implements Runnable
 
             // fire post auth event
             LoginEvent event = new LoginEvent(handler.handshake.username, ((InetSocketAddress) channel.remoteAddress()).getAddress(), handler.handshake.host);
-            BungeeCord.instance.pluginManager.onHandshake(event);
+            BungeeCord.instance.pluginManager.callEvent(event);
             if (event.isCancelled())
             {
                 throw new KickException(event.getCancelReason());

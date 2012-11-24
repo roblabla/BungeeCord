@@ -12,12 +12,16 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import lombok.Getter;
 import static net.md_5.bungee.Logger.$;
+import net.md_5.bungee.event.Event;
+import net.md_5.bungee.event.EventManager;
+import net.md_5.bungee.event.HandlerList;
+import net.md_5.bungee.event.SimpleEventManager;
 
 /**
  * Plugin manager to handle loading and saving other JavaPlugin's. This class is
  * itself a plugin for ease of use.
  */
-public class JavaPluginManager extends JavaPlugin
+public class JavaPluginManager
 {
 
     /**
@@ -26,6 +30,7 @@ public class JavaPluginManager extends JavaPlugin
     @Getter
     private final Set<JavaPlugin> plugins = new HashSet<>();
     private static final Pattern pattern = Pattern.compile(".*\\.jar");
+    private final EventManager eventManager = new SimpleEventManager($());
 
     /**
      * Load all plugins from the plugins folder. This method must only be called
@@ -78,41 +83,20 @@ public class JavaPluginManager extends JavaPlugin
                 ex.printStackTrace();
             }
         }
+        HandlerList.bakeAll();
     }
 
-    @Override
-    public void onDisable()
+    public void disablePlugins()
     {
         for (JavaPlugin p : plugins)
         {
             p.onDisable();
+            HandlerList.unregisterAll(p);
         }
     }
 
-    @Override
-    public void onHandshake(LoginEvent event)
+    public <T extends Event> T callEvent(T event)
     {
-        for (JavaPlugin p : plugins)
-        {
-            p.onHandshake(event);
-        }
-    }
-
-    @Override
-    public void onLogin(LoginEvent event)
-    {
-        for (JavaPlugin p : plugins)
-        {
-            p.onLogin(event);
-        }
-    }
-
-    @Override
-    public void onServerConnect(ServerConnectEvent event)
-    {
-        for (JavaPlugin p : plugins)
-        {
-            p.onServerConnect(event);
-        }
+        return eventManager.callEvent(event);
     }
 }

@@ -34,7 +34,7 @@ public class UserConnection extends GenericConnection implements CommandSender
     // ping stuff
     private int trackingPingId;
     private long pingTime;
-    private int ping;
+    public int ping;
 
     public UserConnection(Channel channel, Packet2Handshake handshake, List<ByteBuf> loginPackets)
     {

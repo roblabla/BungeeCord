@@ -18,7 +18,7 @@ public class GlobalTabList implements TabListHandler
     {
         for (UserConnection c : BungeeCord.instance.connections.values())
         {
-            con.packetQueue.add(new PacketC9PlayerListItem(c.username, true, c.getPing()));
+            con.packetQueue.add(new PacketC9PlayerListItem(c.username, true, c.ping));
         }
     }
 
@@ -32,7 +32,7 @@ public class GlobalTabList implements TabListHandler
     {
         if (!sentPings.contains(con))
         {
-            BungeeCord.instance.broadcast(new PacketC9PlayerListItem(con.username, true, con.getPing()));
+            BungeeCord.instance.broadcast(new PacketC9PlayerListItem(con.username, true, con.ping));
             sentPings.add(con);
         }
     }
