@@ -1,14 +1,22 @@
 package net.md_5.bungee.netty;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import net.md_5.bungee.BungeeCord;
-import net.md_5.bungee.InitialHandler;
+import net.md_5.bungee.connection.InitialHandler;
 
+@ChannelHandler.Sharable
 public class MinecraftPipeline extends ChannelInitializer
 {
+
+    public static MinecraftPipeline instance = new MinecraftPipeline();
+
+    private MinecraftPipeline()
+    {
+    }
 
     @Override
     public void initChannel(Channel ch) throws Exception

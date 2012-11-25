@@ -112,7 +112,7 @@ public enum ChatColor
 
     private ChatColor(char code)
     {
-        this.toString = new String(new char[]
+        toString = new String(new char[]
                 {
                     COLOR_CHAR, code
                 });
@@ -140,6 +140,15 @@ public enum ChatColor
         return STRIP_COLOR_PATTERN.matcher(input).replaceAll("");
     }
 
+    /**
+     * This method translates colour codes from a different {@link #COLOR_CHAR}
+     * into the defined one. Use this to translate to and from a human readable
+     * format.
+     *
+     * @param altColorChar the old colour char
+     * @param textToTranslate the text to translate
+     * @return the translated text
+     */
     public static String translateAlternateColorCodes(char altColorChar, String textToTranslate)
     {
         char[] b = textToTranslate.toCharArray();

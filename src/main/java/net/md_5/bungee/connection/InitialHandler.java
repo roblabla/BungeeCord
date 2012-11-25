@@ -1,4 +1,4 @@
-package net.md_5.bungee;
+package net.md_5.bungee.connection;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -6,6 +6,12 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import net.md_5.bungee.BungeeCord;
+import net.md_5.bungee.ChatColor;
+import net.md_5.bungee.Configuration;
+import net.md_5.bungee.EncryptionUtil;
+import net.md_5.bungee.KickException;
+import net.md_5.bungee.Util;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.packet.Packet2Handshake;
 import net.md_5.bungee.packet.PacketFDEncryptionRequest;
@@ -15,12 +21,7 @@ import net.md_5.bungee.plugin.LoginEvent;
 public class InitialHandler implements PacketHandler
 {
 
-    enum State
-    {
-
-        HANDSHAKE, RESPONSE, LOGIN;
-    }
-    State state = State.HANDSHAKE;
+    LoginState state = LoginState.HANDHSAKE;
     Packet2Handshake handshake;
     PacketFDEncryptionRequest encryptionRequest;
     private List<ByteBuf> customPackets;
@@ -37,7 +38,7 @@ public class InitialHandler implements PacketHandler
         int id = Util.getId(buf);
         switch (state)
         {
-            case HANDSHAKE:
+            case HANDHSAKE:
                 switch (id)
                 {
                     case 0x02:
@@ -51,7 +52,7 @@ public class InitialHandler implements PacketHandler
 
                         encryptionRequest = EncryptionUtil.encryptRequest();
                         channel.write(encryptionRequest);
-                        state = State.RESPONSE;
+                        state = LoginState.RESPONSE;
                         break;
                     case 0xFE:
                         Configuration conf = BungeeCord.instance.config;

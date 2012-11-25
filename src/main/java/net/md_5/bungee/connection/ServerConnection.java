@@ -23,12 +23,7 @@ import net.md_5.bungee.packet.PacketFFKick;
 public class ServerConnection extends GenericConnection implements PacketHandler
 {
 
-    enum State
-    {
-
-        RESPONSE, ACTIVATE, LOGIN;
-    }
-    State state = State.RESPONSE;
+    LoginState state = LoginState.HANDHSAKE;
     private static SecretKey secret = new SecretKeySpec(new byte[16], "AES");
     private final UserConnection user;
 
@@ -49,18 +44,18 @@ public class ServerConnection extends GenericConnection implements PacketHandler
         int id = Util.getId(buf);
         switch (state)
         {
-            case RESPONSE:
+            case HANDHSAKE:
                 PacketFDEncryptionRequest encryptRequest = new PacketFDEncryptionRequest(buf);
                 PublicKey pub = EncryptionUtil.getPubkey(encryptRequest);
                 PacketFCEncryptionResponse response = new PacketFCEncryptionResponse(EncryptionUtil.getShared(secret, pub), EncryptionUtil.encrypt(pub, encryptRequest.verifyToken));
                 channel.write(response);
                 break;
-            case ACTIVATE:
+            case RESPONSE:
                 if (id != 0xFC)
                 {
                     throw new RuntimeException("Server did not send encryption enable");
                 }
-                Util.addCipher(channel, secret);
+                EncryptionUtil.addCipher(channel, secret);
 
                 for (ByteBuf custom : user.loginPackets)
                 {
@@ -76,7 +71,6 @@ public class ServerConnection extends GenericConnection implements PacketHandler
                 }
                 Packet1Login login = new Packet1Login(buf);
                 channel.write(new PacketFAPluginMessage("REGISTER", "RubberBand".getBytes()));
-                user.reconnecting = true;
 
                 if (user.server != null)
                 {
@@ -94,9 +88,8 @@ public class ServerConnection extends GenericConnection implements PacketHandler
 
                     user.server.disconnect("Quitting");
                     user.serverEntityId = login.entityId;
-                    channel.write(new Packet9Respawn(login.dimension, login.difficulty, login.gameMode, (short) 256, login.levelType).getPacket());
+                    channel.write(new Packet9Respawn(login.dimension, login.difficulty, login.gameMode, (short) 256, login.levelType));
                 }
-                user.reconnecting = false;
         }
     }
 }

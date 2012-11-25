@@ -71,9 +71,9 @@ public class BungeeCord
      */
     private final ReconnectSaveThread saveThread = new ReconnectSaveThread();
     /**
-     * Server socket listener.
+     * Thread pool used for networking.
      */
-    private final EventLoopGroup eventGroup = new NioEventLoopGroup();
+    public final EventLoopGroup eventGroup = new NioEventLoopGroup();
     /**
      * Server socket channel.
      */
@@ -197,11 +197,7 @@ public class BungeeCord
         }
 
         InetSocketAddress addr = Util.getAddr(config.bindHost);
-        channel = new ServerBootstrap().
-                channel(NioServerSocketChannel.class).
-                childHandler(new MinecraftPipeline()).
-                childOption(ChannelOption.IP_TOS, 0x18).
-                group(eventGroup).localAddress(addr).bind().channel();
+        channel = new ServerBootstrap().channel(NioServerSocketChannel.class).childHandler(MinecraftPipeline.instance).group(eventGroup).localAddress(addr).bind().channel();
 
         saveThread.start();
         $().info("Listening on " + addr);

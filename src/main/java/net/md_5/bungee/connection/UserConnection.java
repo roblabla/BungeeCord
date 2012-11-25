@@ -1,7 +1,10 @@
 package net.md_5.bungee.connection;
 
+import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +14,7 @@ import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.EntityMap;
 import net.md_5.bungee.Util;
 import net.md_5.bungee.command.CommandSender;
+import net.md_5.bungee.netty.MinecraftPipeline;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.packet.Packet;
 import net.md_5.bungee.packet.Packet2Handshake;
@@ -22,6 +26,7 @@ import net.md_5.bungee.plugin.ServerConnectEvent;
 public class UserConnection extends GenericConnection implements CommandSender
 {
 
+    private static final AttributeKey<String> ATTR_SERVER = new AttributeKey("server");
     public final Packet2Handshake handshake;
     public Queue<Packet> packetQueue = new ConcurrentLinkedQueue<>();
     public List<ByteBuf> loginPackets = new ArrayList<>();
@@ -50,10 +55,10 @@ public class UserConnection extends GenericConnection implements CommandSender
     {
         ServerConnectEvent event = new ServerConnectEvent(this.server == null, this, server);
         event.setNewServer(server);
-        BungeeCord.instance.pluginManager.onServerConnect(event);
+        BungeeCord.instance.pluginManager.callEvent(event);
         if (event.getMessage() != null)
         {
-            this.sendMessage(event.getMessage());
+            sendMessage(event.getMessage());
         }
         if (event.getNewServer() == null)
         {
@@ -66,11 +71,13 @@ public class UserConnection extends GenericConnection implements CommandSender
             }
         }
         InetSocketAddress addr = BungeeCord.instance.config.getServer(event.getNewServer());
-        connect(server, addr);
+        new Bootstrap().channel(NioSocketChannel.class).handler(MinecraftPipeline.instance).group(BungeeCord.instance.eventGroup).remoteAddress(addr).connect().channel().write(handshake).channel().attr(ATTR_SERVER).set(server);
     }
 
-    private void connect(String name, InetSocketAddress serverAddr)
+    @Override
+    public String getName()
     {
+        return username;
     }
 
     @Override

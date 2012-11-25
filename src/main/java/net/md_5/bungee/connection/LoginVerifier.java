@@ -1,10 +1,15 @@
-package net.md_5.bungee;
+package net.md_5.bungee.connection;
 
+import net.md_5.bungee.connection.InitialHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
 import javax.crypto.SecretKey;
 import lombok.RequiredArgsConstructor;
+import net.md_5.bungee.BungeeCord;
+import net.md_5.bungee.EncryptionUtil;
+import net.md_5.bungee.KickException;
+import net.md_5.bungee.Util;
 import net.md_5.bungee.packet.PacketFCEncryptionResponse;
 import net.md_5.bungee.plugin.LoginEvent;
 
@@ -38,7 +43,7 @@ public class LoginVerifier implements Runnable
 
             channel.write(new PacketFCEncryptionResponse());
             EncryptionUtil.addCipher(channel, shared);
-            handler.state = InitialHandler.State.LOGIN;
+            handler.state = LoginState.LOGIN;
         } catch (KickException ex)
         {
             Util.kick(channel, ex.getMessage());
