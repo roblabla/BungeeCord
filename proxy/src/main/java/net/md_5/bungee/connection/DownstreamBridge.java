@@ -3,6 +3,7 @@ package net.md_5.bungee.connection;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import java.io.DataInput;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.EntityMap;
@@ -15,11 +16,11 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
-import net.md_5.bungee.api.scoreboard.Objective;
-import net.md_5.bungee.api.scoreboard.Position;
-import net.md_5.bungee.api.scoreboard.Score;
-import net.md_5.bungee.api.scoreboard.Scoreboard;
-import net.md_5.bungee.api.scoreboard.Team;
+import net.md_5.bungee.api.score.Objective;
+import net.md_5.bungee.api.score.Position;
+import net.md_5.bungee.api.score.Score;
+import net.md_5.bungee.api.score.Scoreboard;
+import net.md_5.bungee.api.score.Team;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.packet.Packet0KeepAlive;
@@ -47,8 +48,9 @@ public class DownstreamBridge extends PacketHandler
         ServerInfo def = bungee.getServerInfo( con.getPendingConnection().getListener().getFallbackServer() );
         if ( server.getInfo() != def )
         {
+            server.setObsolete( true );
             con.connectNow( def );
-            con.sendMessage( ChatColor.RED + "The server you were previously on went down, you have been connected to the lobby" );
+            con.sendMessage( bungee.getTranslation( "server_went_down" ) );
         } else
         {
             con.disconnect( Util.exception( t ) );
@@ -71,8 +73,11 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public void handle(byte[] buf) throws Exception
     {
-        EntityMap.rewrite( buf, con.getServerEntityId(), con.getClientEntityId() );
-        con.sendPacket( buf );
+        if ( !server.isObsolete() )
+        {
+            EntityMap.rewrite( buf, con.getServerEntityId(), con.getClientEntityId() );
+            con.sendPacket( buf );
+        }
     }
 
     @Override
@@ -86,7 +91,7 @@ public class DownstreamBridge extends PacketHandler
     public void handle(PacketC9PlayerListItem playerList) throws Exception
     {
 
-        if ( !bungee.getTabListHandler().onListUpdate( con, playerList.getUsername(), playerList.isOnline(), playerList.getPing() ) )
+        if ( !con.getTabList().onListUpdate( playerList.getUsername(), playerList.isOnline(), playerList.getPing() ) )
         {
             throw new CancelSendSignal();
         }
@@ -161,9 +166,9 @@ public class DownstreamBridge extends PacketHandler
                 t.setDisplayName( team.getDisplayName() );
                 t.setPrefix( team.getPrefix() );
                 t.setSuffix( team.getSuffix() );
-                t.setFriendlyFire(team.isFriendlyFire() );
+                t.setFriendlyFire( team.isFriendlyFire() );
             }
-            if ( team.getPlayers()!= null )
+            if ( team.getPlayers() != null )
             {
                 for ( String s : team.getPlayers() )
                 {
@@ -182,15 +187,10 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public void handle(PacketFAPluginMessage pluginMessage) throws Exception
     {
-        ByteArrayDataInput in = ByteStreams.newDataInput( pluginMessage.getData() );
+        DataInput in = pluginMessage.getStream();
         PluginMessageEvent event = new PluginMessageEvent( con.getServer(), con, pluginMessage.getTag(), pluginMessage.getData().clone() );
 
         if ( bungee.getPluginManager().callEvent( event ).isCancelled() )
-        {
-            throw new CancelSendSignal();
-        }
-
-        if ( pluginMessage.getTag().equals( "MC|TPack" ) && con.getPendingConnection().getListener().getTexturePack() != null )
         {
             throw new CancelSendSignal();
         }
@@ -325,7 +325,7 @@ public class DownstreamBridge extends PacketHandler
         {
             def = null;
         }
-        ServerKickEvent event = bungee.getPluginManager().callEvent( new ServerKickEvent( con, kick.getMessage(), def ) );
+        ServerKickEvent event = bungee.getPluginManager().callEvent( new ServerKickEvent( con, kick.getMessage(), def, ServerKickEvent.State.CONNECTED ) );
         if ( event.isCancelled() && event.getCancelServer() != null )
         {
             con.connectNow( event.getCancelServer() );

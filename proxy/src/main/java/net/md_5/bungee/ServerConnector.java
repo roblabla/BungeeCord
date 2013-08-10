@@ -1,9 +1,9 @@
 package net.md_5.bungee;
 
 import com.google.common.base.Preconditions;
-import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import java.io.DataInput;
 import java.security.PublicKey;
 import java.util.Objects;
 import java.util.Queue;
@@ -16,9 +16,9 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
-import net.md_5.bungee.api.scoreboard.Objective;
-import net.md_5.bungee.api.scoreboard.Scoreboard;
-import net.md_5.bungee.api.scoreboard.Team;
+import net.md_5.bungee.api.score.Objective;
+import net.md_5.bungee.api.score.Scoreboard;
+import net.md_5.bungee.api.score.Team;
 import net.md_5.bungee.connection.CancelSendSignal;
 import net.md_5.bungee.connection.DownstreamBridge;
 import net.md_5.bungee.netty.HandlerBoss;
@@ -27,7 +27,9 @@ import net.md_5.bungee.netty.CipherDecoder;
 import net.md_5.bungee.netty.CipherEncoder;
 import net.md_5.bungee.netty.PacketDecoder;
 import net.md_5.bungee.netty.PacketHandler;
+import net.md_5.bungee.netty.PipelineUtils;
 import net.md_5.bungee.protocol.Forge;
+import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.packet.DefinedPacket;
 import net.md_5.bungee.protocol.packet.Packet1Login;
 import net.md_5.bungee.protocol.packet.Packet9Respawn;
@@ -77,7 +79,7 @@ public class ServerConnector extends PacketHandler
 
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF( "Login" );
-        out.writeUTF( user.getAddress().getAddress().getHostAddress() );
+        out.writeUTF( user.getAddress().getHostString() );
         out.writeInt( user.getAddress().getPort() );
         channel.write( new PacketFAPluginMessage( "BungeeCord", out.toByteArray() ) );
 
@@ -115,6 +117,10 @@ public class ServerConnector extends PacketHandler
             }
         }
 
+        for ( PacketFAPluginMessage message : user.getPendingConnection().getRegisterMessages() )
+        {
+            ch.write( message );
+        }
         if ( !sentMessages )
         {
             for ( PacketFAPluginMessage message : user.getPendingConnection().getLoginMessages() )
@@ -148,9 +154,13 @@ public class ServerConnector extends PacketHandler
                             (byte) user.getPendingConnection().getListener().getTabListSize() );
                 }
                 user.unsafe().sendPacket( modLogin );
+
+                MinecraftOutput out = new MinecraftOutput();
+                out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")" );
+                user.unsafe().sendPacket( new PacketFAPluginMessage( "MC|Brand", out.toArray() ) );
             } else
             {
-                bungee.getTabListHandler().onServerChange( user );
+                user.getTabList().onServerChange();
 
                 Scoreboard serverScoreboard = user.getServerSentScoreboard();
                 for ( Objective objective : serverScoreboard.getObjectives() )
@@ -215,7 +225,7 @@ public class ServerConnector extends PacketHandler
             ch.write( new PacketFCEncryptionResponse( shared, token ) );
 
             Cipher encrypt = EncryptionUtil.getCipher( Cipher.ENCRYPT_MODE, secretkey );
-            ch.getHandle().pipeline().addBefore( "decoder", "encrypt", new CipherEncoder( encrypt ) );
+            ch.addBefore( PipelineUtils.PACKET_DECODE_HANDLER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
 
             thisState = State.ENCRYPT_RESPONSE;
         } else
@@ -230,7 +240,7 @@ public class ServerConnector extends PacketHandler
         Preconditions.checkState( thisState == State.ENCRYPT_RESPONSE, "Not expecting ENCRYPT_RESPONSE" );
 
         Cipher decrypt = EncryptionUtil.getCipher( Cipher.DECRYPT_MODE, secretkey );
-        ch.getHandle().pipeline().addBefore( "decoder", "decrypt", new CipherDecoder( decrypt ) );
+        ch.addBefore( PipelineUtils.PACKET_DECODE_HANDLER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
 
         ch.write( user.getPendingConnection().getForgeLogin() );
 
@@ -246,7 +256,7 @@ public class ServerConnector extends PacketHandler
         {
             def = null;
         }
-        ServerKickEvent event = bungee.getPluginManager().callEvent( new ServerKickEvent( user, kick.getMessage(), def ) );
+        ServerKickEvent event = bungee.getPluginManager().callEvent( new ServerKickEvent( user, kick.getMessage(), def, ServerKickEvent.State.CONNECTING ) );
         if ( event.isCancelled() && event.getCancelServer() != null )
         {
             user.connect( event.getCancelServer() );
@@ -271,10 +281,9 @@ public class ServerConnector extends PacketHandler
             throw new IllegalStateException( "May not connect to another BungeCord!" );
         }
 
-        if ( pluginMessage.getTag().equals( "FML" ) && ( pluginMessage.getData()[0] & 0xFF ) == 0 )
+        DataInput in = pluginMessage.getStream();
+        if ( pluginMessage.getTag().equals( "FML" ) && in.readUnsignedByte() == 0 )
         {
-            ByteArrayDataInput in = ByteStreams.newDataInput( pluginMessage.getData() );
-            in.readUnsignedByte();
             int count = in.readInt();
             for ( int i = 0; i < count; i++ )
             {

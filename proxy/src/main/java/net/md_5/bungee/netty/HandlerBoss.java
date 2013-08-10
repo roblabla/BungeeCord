@@ -2,24 +2,23 @@ package net.md_5.bungee.netty;
 
 import com.google.common.base.Preconditions;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundMessageHandlerAdapter;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.ReadTimeoutException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.logging.Level;
-import net.md_5.bungee.ServerConnector;
+import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.connection.CancelSendSignal;
-import net.md_5.bungee.connection.DownstreamBridge;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.connection.PingHandler;
-import net.md_5.bungee.connection.UpstreamBridge;
 
 /**
  * This class is a primitive wrapper for {@link PacketHandler} instances tied to
  * channels to maintain simple states, and only call the required, adapted
  * methods when the channel is connected.
  */
-public class HandlerBoss extends ChannelInboundMessageHandlerAdapter<Object>
+public class HandlerBoss extends ChannelInboundHandlerAdapter
 {
 
     private ChannelWrapper channel;
@@ -36,7 +35,7 @@ public class HandlerBoss extends ChannelInboundMessageHandlerAdapter<Object>
     {
         if ( handler != null )
         {
-            channel = new ChannelWrapper( ctx.channel() );
+            channel = new ChannelWrapper( ctx );
             handler.connected( channel );
 
             if ( !( handler instanceof InitialHandler || handler instanceof PingHandler ) )
@@ -61,27 +60,29 @@ public class HandlerBoss extends ChannelInboundMessageHandlerAdapter<Object>
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
     {
-        if ( handler != null && ctx.channel().isActive() )
         {
-            if ( msg instanceof PacketWrapper )
+            if ( handler != null )
             {
-                boolean sendPacket = true;
-                try
+                if ( msg instanceof PacketWrapper )
                 {
-                    ( (PacketWrapper) msg ).packet.handle( handler );
-                } catch ( CancelSendSignal ex )
+                    boolean sendPacket = true;
+                    try
+                    {
+                        ( (PacketWrapper) msg ).packet.handle( handler );
+                    } catch ( CancelSendSignal ex )
+                    {
+                        sendPacket = false;
+                    }
+                    if ( sendPacket )
+                    {
+                        handler.handle( ( (PacketWrapper) msg ).buf );
+                    }
+                } else
                 {
-                    sendPacket = false;
+                    handler.handle( (byte[]) msg );
                 }
-                if ( sendPacket )
-                {
-                    handler.handle( ( (PacketWrapper) msg ).buf );
-                }
-            } else
-            {
-                handler.handle( (byte[]) msg );
             }
         }
     }
@@ -101,6 +102,7 @@ public class HandlerBoss extends ChannelInboundMessageHandlerAdapter<Object>
             {
                 ProxyServer.getInstance().getLogger().log( Level.SEVERE, handler + " - encountered exception", cause );
             }
+
             if ( handler != null )
             {
                 try
@@ -111,6 +113,7 @@ public class HandlerBoss extends ChannelInboundMessageHandlerAdapter<Object>
                     ProxyServer.getInstance().getLogger().log( Level.SEVERE, handler + " - exception processing exception", ex );
                 }
             }
+
             ctx.close();
         }
     }

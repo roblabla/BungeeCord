@@ -14,13 +14,17 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
+import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.Util;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ConfigurationAdapter;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.api.config.ServerInfo;
-import net.md_5.bungee.api.config.TexturePackInfo;
+import net.md_5.bungee.api.tab.TabListHandler;
+import net.md_5.bungee.tab.Global;
+import net.md_5.bungee.tab.GlobalPing;
+import net.md_5.bungee.tab.ServerUnique;
 import net.md_5.bungee.util.CaseInsensitiveMap;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -28,6 +32,16 @@ import org.yaml.snakeyaml.Yaml;
 public class YamlConfig implements ConfigurationAdapter
 {
 
+    /**
+     * The default tab list options available for picking.
+     */
+    @RequiredArgsConstructor
+    private enum DefaultTabList
+    {
+
+        GLOBAL( Global.class ), GLOBAL_PING( GlobalPing.class ), SERVER( ServerUnique.class );
+        private final Class<? extends TabListHandler> clazz;
+    }
     private Yaml yaml;
     private Map config;
     private final File file = new File( "config.yml" );
@@ -156,9 +170,10 @@ public class YamlConfig implements ConfigurationAdapter
             Map<String, Object> val = entry.getValue();
             String name = entry.getKey();
             String addr = get( "address", "localhost:25565", val );
+            String motd = ChatColor.translateAlternateColorCodes( '&', get( "motd", "&1Just another BungeeCord - Forced Host", val ) );
             boolean restricted = get( "restricted", false, val );
             InetSocketAddress address = Util.getAddr( addr );
-            ServerInfo info = ProxyServer.getInstance().constructServerInfo( name, address, restricted );
+            ServerInfo info = ProxyServer.getInstance().constructServerInfo( name, address, motd, restricted );
             ret.put( name, info );
         }
 
@@ -180,7 +195,7 @@ public class YamlConfig implements ConfigurationAdapter
 
         for ( Map<String, Object> val : base )
         {
-            String motd = get( "motd", "Another Bungee server", val );
+            String motd = get( "motd", "&1Another Bungee server", val );
             motd = ChatColor.translateAlternateColorCodes( '&', motd );
 
             int maxPlayers = get( "max_players", 1, val );
@@ -191,10 +206,15 @@ public class YamlConfig implements ConfigurationAdapter
             int tabListSize = get( "tab_size", 60, val );
             InetSocketAddress address = Util.getAddr( host );
             Map<String, String> forced = new CaseInsensitiveMap<>( get( "forced_hosts", forcedDef, val ) );
-            String textureURL = get( "texture_url", null, val );
-            int textureSize = get( "texture_size", 16, val );
-            TexturePackInfo texture = ( textureURL == null ) ? null : new TexturePackInfo( textureURL, textureSize );
-            ListenerInfo info = new ListenerInfo( address, motd, maxPlayers, tabListSize, defaultServer, fallbackServer, forceDefault, forced, texture );
+            String tabListName = get( "tab_list", "GLOBAL_PING", val );
+            DefaultTabList value = DefaultTabList.valueOf( tabListName.toUpperCase() );
+            if ( value == null )
+            {
+                value = DefaultTabList.GLOBAL_PING;
+            }
+            boolean setLocalAddress = get( "bind_local_address", true, val );
+
+            ListenerInfo info = new ListenerInfo( address, motd, maxPlayers, tabListSize, defaultServer, fallbackServer, forceDefault, forced, value.clazz, setLocalAddress );
             ret.add( info );
         }
 
@@ -209,6 +229,12 @@ public class YamlConfig implements ConfigurationAdapter
         Collection<String> ret = ( groups == null ) ? new HashSet<String>() : new HashSet<>( groups );
         ret.add( "default" );
         return ret;
+    }
+
+    @Override
+    public Collection<?> getList(String path, Collection<?> def)
+    {
+        return get( path, def );
     }
 
     @Override

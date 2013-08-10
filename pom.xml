@@ -11,7 +11,7 @@
 
     <groupId>net.md-5</groupId>
     <artifactId>bungeecord-parent</artifactId>
-    <version>1.5-SNAPSHOT</version>
+    <version>1.6.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>BungeeCord</name>
@@ -59,7 +59,7 @@
 
     <properties>
         <build.number>unknown</build.number>
-        <netty.version>4.0.0.CR1</netty.version>
+        <netty.version>4.0.7.Final</netty.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

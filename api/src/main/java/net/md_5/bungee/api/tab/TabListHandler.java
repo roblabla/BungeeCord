@@ -1,4 +1,4 @@
-package net.md_5.bungee.api;
+package net.md_5.bungee.api.tab;
 
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
@@ -6,18 +6,25 @@ public interface TabListHandler
 {
 
     /**
+     * Called so that this class may set member fields to keep track of its
+     * internal state. You should not do any packet sending or manipulation of
+     * the passed player, other than storing it.
+     *
+     * @param player the player to be associated with this list
+     */
+    void init(ProxiedPlayer player);
+
+    /**
+     * Called when this player first connects to the proxy.
+     */
+    void onConnect();
+
+    /**
      * Called when a player first connects to the proxy.
      *
      * @param player the connecting player
      */
-    public void onConnect(ProxiedPlayer player);
-
-    /**
-     * Called when a player changes their connected server.
-     *
-     * @param player the player who changed servers
-     */
-    public void onServerChange(ProxiedPlayer player);
+    void onServerChange();
 
     /**
      * Called when a players ping changes. The new ping will have not updated in
@@ -26,14 +33,14 @@ public interface TabListHandler
      * @param player the player who's ping changed
      * @param ping the player's new ping.
      */
-    public void onPingChange(ProxiedPlayer player, int ping);
+    void onPingChange(int ping);
 
     /**
      * Called when a player disconnects.
      *
      * @param player the disconnected player
      */
-    public void onDisconnect(ProxiedPlayer player);
+    void onDisconnect();
 
     /**
      * Called when a list update packet is sent from server to client.
@@ -44,5 +51,5 @@ public interface TabListHandler
      * @param ping ping of the subject player
      * @return whether to send the packet to the client
      */
-    public boolean onListUpdate(ProxiedPlayer player, String name, boolean online, int ping);
+    boolean onListUpdate(String name, boolean online, int ping);
 }
