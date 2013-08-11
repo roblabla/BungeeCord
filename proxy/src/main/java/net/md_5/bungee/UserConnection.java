@@ -104,19 +104,25 @@ public final class UserConnection implements ProxiedPlayer
     public void init()
     {
         this.displayName = name;
-        try
-        {
-            this.tabList = AbstractReconnectManager.getForcedHost( pendingConnection ).getTabList().getDeclaredConstructor().newInstance();
-        } catch ( ReflectiveOperationException ex )
-        {
-            throw new RuntimeException( ex );
-        }
         this.tabList.init( this );
 
         Collection<String> g = bungee.getConfigurationAdapter().getGroups( name );
         for ( String s : g )
         {
             addGroups( s );
+        }
+    }
+
+    //@Override
+    public void setTabList(Class<? extends TabListHandler> tablist)
+    {
+        try
+        {
+            this.tabList = tablist.getDeclaredConstructor().newInstance();
+            this.tabList.init( this );
+        } catch ( ReflectiveOperationException ex )
+        {
+            throw new RuntimeException( ex );
         }
     }
 

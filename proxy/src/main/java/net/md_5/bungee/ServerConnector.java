@@ -192,7 +192,7 @@ public class ServerConnector extends PacketHandler
                     ( (Custom) user.getTabList() ).clear();
                 }
 
-                user.setTabList( server.getInfo().getTabList().newInstance() );
+                user.setTabList( server.getInfo().getTabList() );
 
                 user.sendDimensionSwitch();
 

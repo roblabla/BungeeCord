@@ -135,14 +135,15 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     {
         try
         {
-            ServerInfo forced = AbstractReconnectManager.getForcedHost( this );
+            ServerInfo forced = AbstractReconnectManager.getMotdHost( this );
             String motd = forced.getMotd();
-            
+
             int onlineCount = bungee.getOnlineCount();
-            if (forced.getMotdCount() == ServerInfo.MotdCount.SERVER) {
+            if ( forced.getMotdCount() == ServerInfo.MotdCount.SERVER )
+            {
                 onlineCount = forced.getPlayers().size();
             }
-            
+
             ServerPing response = new ServerPing( bungee.getProtocolVersion(), bungee.getGameVersion(),
                     motd, onlineCount, forced.getMaxPlayers() );
 
