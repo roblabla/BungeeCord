@@ -36,6 +36,7 @@ import net.md_5.bungee.protocol.packet.Packet3Chat;
 import net.md_5.bungee.protocol.packet.PacketCCSettings;
 import net.md_5.bungee.protocol.packet.PacketFAPluginMessage;
 import net.md_5.bungee.protocol.packet.PacketFFKick;
+import net.md_5.bungee.reconnect.AbstractReconnectManager;
 import net.md_5.bungee.util.CaseInsensitiveSet;
 
 @RequiredArgsConstructor
@@ -105,7 +106,7 @@ public final class UserConnection implements ProxiedPlayer
         this.displayName = name;
         try
         {
-            this.tabList = getPendingConnection().getListener().getTabList().getDeclaredConstructor().newInstance();
+            this.tabList = AbstractReconnectManager.getForcedHost( pendingConnection ).getTabList().getDeclaredConstructor().newInstance();
         } catch ( ReflectiveOperationException ex )
         {
             throw new RuntimeException( ex );

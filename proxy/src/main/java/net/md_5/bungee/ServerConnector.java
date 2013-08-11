@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.ServerConnectedEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.event.ServerSwitchEvent;
@@ -33,13 +34,19 @@ import net.md_5.bungee.protocol.MinecraftOutput;
 import net.md_5.bungee.protocol.packet.DefinedPacket;
 import net.md_5.bungee.protocol.packet.Packet1Login;
 import net.md_5.bungee.protocol.packet.Packet9Respawn;
+import net.md_5.bungee.protocol.packet.PacketC9PlayerListItem;
 import net.md_5.bungee.protocol.packet.PacketCEScoreboardObjective;
 import net.md_5.bungee.protocol.packet.PacketD1Team;
 import net.md_5.bungee.protocol.packet.PacketFAPluginMessage;
 import net.md_5.bungee.protocol.packet.PacketFCEncryptionResponse;
 import net.md_5.bungee.protocol.packet.PacketFDEncryptionRequest;
+import net.md_5.bungee.protocol.packet.PacketFEPing;
 import net.md_5.bungee.protocol.packet.PacketFFKick;
 import net.md_5.bungee.protocol.packet.forge.Forge1Login;
+import net.md_5.bungee.tab.Custom;
+import net.md_5.bungee.tab.Global;
+import net.md_5.bungee.tab.GlobalPing;
+import net.md_5.bungee.tab.ServerUnique;
 
 @RequiredArgsConstructor
 public class ServerConnector extends PacketHandler
@@ -52,6 +59,7 @@ public class ServerConnector extends PacketHandler
     private State thisState = State.ENCRYPT_REQUEST;
     private SecretKey secretkey;
     private boolean sentMessages;
+    private Class<?> Custom;
 
     private enum State
     {
@@ -156,7 +164,7 @@ public class ServerConnector extends PacketHandler
                 user.unsafe().sendPacket( modLogin );
 
                 MinecraftOutput out = new MinecraftOutput();
-                out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket(ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")" );
+                out.writeStringUTF8WithoutLengthHeaderBecauseDinnerboneStuffedUpTheMCBrandPacket( ProxyServer.getInstance().getName() + " (" + ProxyServer.getInstance().getVersion() + ")" );
                 user.unsafe().sendPacket( new PacketFAPluginMessage( "MC|Brand", out.toArray() ) );
             } else
             {
@@ -172,6 +180,19 @@ public class ServerConnector extends PacketHandler
                     user.unsafe().sendPacket( new PacketD1Team( team.getName() ) );
                 }
                 serverScoreboard.clear();
+
+                if ( !( user.getTabList().getClass().isAssignableFrom( Custom ) ) )
+                {
+                    for ( ProxiedPlayer p : BungeeCord.getInstance().getPlayers() )
+                    {
+                        user.unsafe().sendPacket( new PacketC9PlayerListItem( p.getDisplayName(), false, (short) 9999 ) );
+                    }
+                } else
+                {
+                    ( (Custom) user.getTabList() ).clear();
+                }
+
+                user.setTabList( server.getInfo().getTabList().newInstance() );
 
                 user.sendDimensionSwitch();
 
