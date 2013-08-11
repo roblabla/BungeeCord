@@ -192,8 +192,6 @@ public class ServerConnector extends PacketHandler
                     ( (Custom) user.getTabList() ).clear();
                 }
 
-                user.setTabList( server.getInfo().getTabList() );
-
                 user.sendDimensionSwitch();
 
                 user.setServerEntityId( login.getEntityId() );
@@ -204,6 +202,11 @@ public class ServerConnector extends PacketHandler
                 user.getServer().disconnect( "Quitting" );
             }
 
+            user.setTabList( server.getInfo().getTabList() );
+            if ( user.getServer() == null ) {
+                user.getTabList().onConnect();
+            }
+            
             // TODO: Fix this?
             if ( !user.isActive() )
             {
