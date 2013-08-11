@@ -59,7 +59,6 @@ public class ServerConnector extends PacketHandler
     private State thisState = State.ENCRYPT_REQUEST;
     private SecretKey secretkey;
     private boolean sentMessages;
-    private Class<?> Custom;
 
     private enum State
     {
@@ -181,7 +180,7 @@ public class ServerConnector extends PacketHandler
                 }
                 serverScoreboard.clear();
 
-                if ( !( user.getTabList().getClass().isAssignableFrom( Custom ) ) )
+                if ( !( user.getTabList().getClass().isAssignableFrom( Custom.class ) ) )
                 {
                     for ( ProxiedPlayer p : BungeeCord.getInstance().getPlayers() )
                     {
