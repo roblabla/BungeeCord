@@ -18,14 +18,6 @@ public class ListenerInfo
      */
     private final InetSocketAddress host;
     /**
-     * Displayed MOTD.
-     */
-    private final String motd;
-    /**
-     * Max amount of slots displayed on the ping page.
-     */
-    private final int maxPlayers;
-    /**
      * Number of players to be shown on the tab list.
      */
     private final int tabListSize;
@@ -48,10 +40,6 @@ public class ListenerInfo
      * transferred depending on the host they connect to.
      */
     private final Map<String, String> forcedHosts;
-    /**
-     * Class used to build tab lists for this player.
-     */
-    private final Class<? extends TabListHandler> tabList;
     /**
      * Whether to set the local address when connecting to servers.
      */
